@@ -1,60 +1,740 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clawctrl — Setup Wizard</title>
+<meta name="description" content="Set up Clawctrl and OpenClaw in minutes. Configure your AI agent stack and download a one-click setup script.">
+<meta property="og:title" content="Clawctrl Setup Wizard">
+<meta property="og:description" content="Configure your AI agent stack and download a one-click setup script.">
+<meta property="og:url" content="https://clawctrl.ai">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+:root{
+  --bg:#0a0d12;--surface:#111318;--surface2:#1a1f27;--border:#252c38;
+  --accent:#e85d04;--accent2:#f48c06;--accent-dim:rgba(232,93,4,.12);
+  --text:#e6edf3;--muted:#8b949e;
+  --green:#3fb950;--blue:#58a6ff;--purple:#d2a8ff;--yellow:#e3b341;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;min-height:100vh;}
 
-  <!-- Primary SEO -->
-  <title>OpenClaw Mission Control | ClawCtrl — Coming Soon</title>
-  <meta
-    name="description"
-    content="ClawCtrl is OpenClaw Mission Control — a robotics dashboard for fleet management, real-time telemetry monitoring, and remote robot control. Launching soon."
-  />
+/* ── Top nav ── */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(10,13,18,.85);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;height:52px;
+}
+.nav-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1rem;text-decoration:none;color:var(--text);}
+.nav-logo .claw{color:var(--accent);}
+.nav-logo .lobster{font-size:1.2rem;}
+.nav-links{display:flex;gap:20px;align-items:center;}
+.nav-links a{font-size:.82rem;color:var(--muted);text-decoration:none;transition:color .15s;}
+.nav-links a:hover{color:var(--text);}
+.nav-badge{background:var(--accent-dim);color:var(--accent);border:1px solid rgba(232,93,4,.3);border-radius:20px;padding:3px 10px;font-size:.72rem;font-weight:600;}
 
-  <!-- Optional meta keywords (not used by Google, but safe to include) -->
-  <meta
-    name="keywords"
-    content="OpenClaw Mission Control, ClawCtrl, ClawCtrl AI, OpenClaw, Open Claw, OpenClaw dashboard, OpenClaw control center, mission control for OpenClaw, OpenClaw fleet management, robot mission control system, robotics control dashboard, robotics fleet management, robot telemetry monitoring, real-time robot monitoring, remote robot control, robot deployment management, robotics automation platform, cloud robotics dashboard, AI robotics control system, robot analytics platform"
-  />
+/* ── Hero ── */
+.hero{text-align:center;padding:56px 16px 40px;}
+.hero-eyebrow{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:.75rem;color:var(--muted);margin-bottom:20px;}
+.hero-eyebrow span{color:var(--green);font-weight:600;}
+.hero h1{font-size:2.6rem;font-weight:800;letter-spacing:-.03em;line-height:1.15;margin-bottom:14px;}
+.hero h1 em{font-style:normal;color:var(--accent);}
+.hero p{color:var(--muted);font-size:1rem;max-width:480px;margin:0 auto 12px;line-height:1.6;}
+.hero-sub{font-size:.8rem;color:var(--border);margin-top:4px;}
+.hero-sub b{color:var(--muted);}
 
-  <link rel="stylesheet" href="styles.css" />
+/* ── App container ── */
+.app{max-width:700px;margin:0 auto;padding:0 16px 80px;}
+
+/* ── Progress ── */
+.progress{display:flex;align-items:center;margin-bottom:32px;}
+.pdot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.68rem;font-weight:700;border:2px solid var(--border);background:var(--surface);color:var(--muted);flex-shrink:0;transition:all .2s;z-index:1;}
+.pdot.active{border-color:var(--accent);color:var(--accent);background:var(--surface2);box-shadow:0 0 0 3px var(--accent-dim);}
+.pdot.done{border-color:var(--green);background:var(--green);color:#000;}
+.pline{flex:1;height:2px;background:var(--border);}
+.pline.done{background:var(--green);}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:18px;}
+.card-title{font-size:1rem;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px;}
+.card-desc{color:var(--muted);font-size:.82rem;margin-bottom:16px;line-height:1.55;}
+.card-desc a{color:var(--blue);}
+
+/* ── Fields ── */
+.field{margin-bottom:14px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:.82rem;font-weight:500;margin-bottom:4px;}
+.hint{color:var(--muted);font-weight:400;font-size:.76rem;margin-left:4px;}
+.req{color:var(--accent);margin-left:2px;}
+input[type=text],input[type=number],input[type=password],select{
+  width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:7px;
+  color:var(--text);padding:8px 11px;font-size:.86rem;outline:none;transition:border-color .15s;}
+input:focus,select:focus{border-color:var(--accent);}
+input::placeholder{color:var(--muted);}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:480px){.frow{grid-template-columns:1fr;}}
+
+/* ── Toggle pills ── */
+.tgroup{display:flex;flex-wrap:wrap;gap:7px;}
+.tbtn{padding:5px 13px;border-radius:20px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:.79rem;cursor:pointer;transition:all .15s;}
+.tbtn.on{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+
+/* ── Switches ── */
+.srow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border);}
+.srow:last-child{border-bottom:none;}
+.slabel{font-size:.86rem;}
+.slabel small{display:block;color:var(--muted);font-size:.74rem;margin-top:1px;}
+.sw{position:relative;width:38px;height:21px;flex-shrink:0;}
+.sw input{opacity:0;width:0;height:0;}
+.sl{position:absolute;inset:0;background:var(--border);border-radius:21px;cursor:pointer;transition:.2s;}
+.sl::before{content:'';position:absolute;width:15px;height:15px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;}
+.sw input:checked+.sl{background:var(--accent);}
+.sw input:checked+.sl::before{transform:translateX(17px);}
+
+/* ── Channel / provider blocks ── */
+.cblock{border:1px solid var(--border);border-radius:7px;padding:14px;margin-top:10px;}
+.cblock.hide,.pblock.hide,.pfields{display:none;}
+.pfields.open{display:block;}
+.cbtitle{font-size:.76rem;font-weight:600;color:var(--blue);margin-bottom:10px;text-transform:uppercase;letter-spacing:.05em;}
+.pblock{border:1px solid var(--border);border-radius:7px;padding:13px;margin-bottom:10px;}
+.pblock:last-child{margin-bottom:0;}
+.pheader{display:flex;align-items:center;justify-content:space-between;cursor:pointer;}
+.pheader .pname{font-size:.86rem;font-weight:500;}
+
+/* ── Panels ── */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* ── Nav buttons ── */
+.nav{display:flex;justify-content:space-between;margin-top:6px;}
+.btn{padding:9px 20px;border-radius:7px;font-size:.86rem;font-weight:600;cursor:pointer;border:none;transition:all .15s;}
+.btn-p{background:var(--accent);color:#fff;}
+.btn-p:hover{background:var(--accent2);}
+.btn-g{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.btn-g:hover{color:var(--text);border-color:var(--muted);}
+
+/* ── Tips ── */
+.tip{border-radius:7px;padding:10px 13px;font-size:.8rem;line-height:1.5;margin-bottom:14px;}
+.tip strong{display:block;margin-bottom:2px;}
+.tip-blue{background:rgba(88,166,255,.07);border:1px solid rgba(88,166,255,.18);color:var(--blue);}
+.tip-purple{background:rgba(210,168,255,.07);border:1px solid rgba(210,168,255,.2);color:var(--purple);}
+.tip-green{background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.2);color:var(--green);}
+.tip-yellow{background:rgba(227,179,65,.07);border:1px solid rgba(227,179,65,.2);color:var(--yellow);}
+
+/* ── Badges ── */
+.sbadge{display:inline-block;background:var(--accent-dim);color:var(--accent);border-radius:4px;padding:2px 7px;font-size:.69rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+.synced{display:inline-block;background:rgba(63,185,80,.12);color:var(--green);border-radius:4px;padding:1px 6px;font-size:.68rem;font-weight:600;margin-left:4px;}
+
+/* ── Download step ── */
+.tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;}
+.tab{padding:9px 16px;font-size:.83rem;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:var(--muted);transition:all .15s;}
+.tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.tabpanel{display:none;}
+.tabpanel.active{display:block;}
+.pre-box{background:#06080b;border:1px solid var(--border);border-radius:7px;padding:14px;font-family:'Menlo','Courier New',monospace;font-size:.71rem;color:#adbac7;overflow:auto;max-height:340px;white-space:pre;line-height:1.65;margin-bottom:12px;}
+.pre-label{font-size:.73rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+
+/* ── Setup steps card ── */
+.setup-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:20px;margin-top:6px;}
+.setup-card h3{font-size:.88rem;font-weight:600;margin-bottom:12px;color:var(--text);}
+.step-item{display:flex;gap:11px;margin-bottom:10px;align-items:flex-start;}
+.step-item:last-child{margin-bottom:0;}
+.step-num{width:21px;height:21px;border-radius:50%;background:var(--accent);color:#fff;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-text{font-size:.83rem;line-height:1.55;color:var(--muted);}
+.step-text code{background:var(--surface);border:1px solid var(--border);padding:1px 5px;border-radius:3px;color:var(--text);font-size:.77rem;}
+.step-text strong{color:var(--text);}
+
+/* ── Download button ── */
+.zip-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff;border:none;border-radius:9px;
+  font-size:1rem;font-weight:700;padding:14px 36px;
+  cursor:pointer;transition:all .2s;
+  box-shadow:0 4px 20px rgba(232,93,4,.3);
+}
+.zip-btn:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(232,93,4,.45);}
+.zip-btn:disabled{opacity:.6;transform:none;cursor:not-allowed;}
+
+/* ── Footer ── */
+footer{text-align:center;padding:32px 16px;border-top:1px solid var(--border);color:var(--muted);font-size:.78rem;margin-top:40px;}
+footer a{color:var(--muted);text-decoration:none;}
+footer a:hover{color:var(--text);}
+footer .sep{margin:0 8px;opacity:.4;}
+</style>
 </head>
 <body>
-  <main class="wrap">
-    <section class="card">
-      <div class="badge">Coming Soon</div>
 
-      <h1>ClawCtrl</h1>
-      <p class="sub">
-        We’re building something powerful. The site is launching soon.
-      </p>
+<!-- Nav -->
+<nav>
+  <a class="nav-logo" href="https://clawctrl.ai">
+    <span class="lobster">🦞</span>
+    <span>Claw<span class="claw">ctrl</span></span>
+  </a>
+  <div class="nav-links">
+    <a href="https://github.com/openclaw/openclaw" target="_blank">OpenClaw</a>
+    <a href="https://docs.openclaw.ai" target="_blank">Docs</a>
+    <a href="https://github.com/crshdn/mission-control" target="_blank">GitHub</a>
+    <span class="nav-badge">Free & Open Source</span>
+  </div>
+</nav>
 
-      <!-- SEO content (visible, but keeps your UI) -->
-      <section class="seo" aria-label="About ClawCtrl">
-        <h2>OpenClaw Mission Control</h2>
-        <p>
-          ClawCtrl provides a mission control dashboard for OpenClaw deployments—built for
-          real-time robot telemetry monitoring, fleet management, and remote robot control.
-        </p>
-      </section>
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-eyebrow"><span>●</span> Powered by OpenClaw Gateway</div>
+  <h1>Your AI agent stack,<br><em>running in minutes.</em></h1>
+  <p>Configure OpenClaw + Clawctrl dashboard, download one ZIP, run one command. Done.</p>
+  <div class="hero-sub"><b>clawctrl.ai</b> &nbsp;·&nbsp; Free, self-hosted, open source</div>
+</div>
 
-      <div class="links">
-        <a class="btn" href="mailto:admin@clawctrl.ai">
-          Contact Us
-        </a>
+<div class="app">
+<div class="progress" id="prog"></div>
+
+<!-- ═══ STEP 0: Gateway ═══ -->
+<div class="panel active" id="step-0">
+  <div class="sbadge">Step 1 of 6 — Gateway</div>
+  <div class="card">
+    <div class="card-title">🌐 Gateway Settings</div>
+    <div class="card-desc">The OpenClaw gateway is the AI runtime that runs locally on your machine and handles all agent communication.</div>
+    <div class="tip tip-blue"><strong>💡 Default port is 18789.</strong> Use "loopback" unless Clawctrl runs on a different machine or you need Tailscale access.</div>
+    <div class="field"><label>Gateway Port<span class="hint">(default 18789)</span></label><input type="number" id="gwPort" value="18789" min="1024" max="65535"></div>
+    <div class="field"><label>Bind Mode</label>
+      <select id="bindMode">
+        <option value="loopback">loopback — localhost only (recommended)</option>
+        <option value="any">any — all interfaces (remote / Docker / different machine)</option>
+      </select>
+    </div>
+    <div class="field"><label>Auth Mode</label>
+      <select id="authMode" onchange="document.getElementById('tkField').style.display=this.value==='none'?'none':''">
+        <option value="token">token — Bearer token (recommended)</option>
+        <option value="none">none — no auth (local dev only)</option>
+      </select>
+    </div>
+    <div class="field" id="tkField"><label>Auth Token<span class="hint">(blank = auto-generate)</span></label><input type="text" id="gwToken" placeholder="Leave blank to auto-generate a secure token"></div>
+    <div class="srow">
+      <div class="slabel">Allow Tailscale access<small>Expose gateway over your Tailscale network</small></div>
+      <label class="sw"><input type="checkbox" id="tailscale"><span class="sl"></span></label>
+    </div>
+  </div>
+  <div class="nav"><div></div><button class="btn btn-p" onclick="go(1)">Next: AI Providers →</button></div>
+</div>
+
+<!-- ═══ STEP 1: Providers ═══ -->
+<div class="panel" id="step-1">
+  <div class="sbadge">Step 2 of 6 — AI Providers</div>
+  <div class="card">
+    <div class="card-title">🤖 AI Providers</div>
+    <div class="card-desc">Select the AI providers you want to use. The first enabled one becomes your default model. You can add more later.</div>
+    <div class="field"><label>Enabled Providers</label>
+      <div class="tgroup">
+        <div class="tbtn on" id="pb-anthropic" onclick="tprov('anthropic')">Anthropic</div>
+        <div class="tbtn" id="pb-openai" onclick="tprov('openai')">OpenAI</div>
+        <div class="tbtn" id="pb-gemini" onclick="tprov('gemini')">Gemini</div>
+        <div class="tbtn" id="pb-openrouter" onclick="tprov('openrouter')">OpenRouter</div>
+        <div class="tbtn" id="pb-ollama" onclick="tprov('ollama')">Ollama (local)</div>
       </div>
+    </div>
+    <div class="pblock" id="bl-anthropic">
+      <div class="pheader" onclick="tpf('anthropic')"><span class="pname">🔑 Anthropic</span><span style="color:var(--muted);font-size:.76rem">▼</span></div>
+      <div class="pfields open" id="pf-anthropic">
+        <div class="field" style="margin-top:10px"><label>API Key<span class="req">*</span><span class="hint">console.anthropic.com</span></label><input type="password" id="anKey" placeholder="sk-ant-..."></div>
+        <div class="field"><label>Default Model</label><select id="anModel"><option value="claude-haiku-4-5">claude-haiku-4-5 — fastest, cheapest (recommended default)</option><option value="claude-sonnet-4-5">claude-sonnet-4-5 — balanced</option><option value="claude-opus-4-5">claude-opus-4-5 — most capable</option></select></div>
+      </div>
+    </div>
+    <div class="pblock hide" id="bl-openai">
+      <div class="pheader" onclick="tpf('openai')"><span class="pname">🔑 OpenAI</span><span style="color:var(--muted);font-size:.76rem">▼</span></div>
+      <div class="pfields" id="pf-openai">
+        <div class="field" style="margin-top:10px"><label>API Key<span class="req">*</span><span class="hint">platform.openai.com</span></label><input type="password" id="oaKey" placeholder="sk-..."></div>
+        <div class="field"><label>Default Model</label><select id="oaModel"><option value="gpt-4o-mini">gpt-4o-mini</option><option value="gpt-4o">gpt-4o</option><option value="o3-mini">o3-mini (reasoning)</option></select></div>
+      </div>
+    </div>
+    <div class="pblock hide" id="bl-gemini">
+      <div class="pheader" onclick="tpf('gemini')"><span class="pname">🔑 Gemini</span><span style="color:var(--muted);font-size:.76rem">▼</span></div>
+      <div class="pfields" id="pf-gemini">
+        <div class="field" style="margin-top:10px"><label>API Key<span class="req">*</span><span class="hint">aistudio.google.com</span></label><input type="password" id="gmKey" placeholder="AIza..."></div>
+        <div class="field"><label>Default Model</label><select id="gmModel"><option value="gemini-2.0-flash">gemini-2.0-flash — fast & cheap</option><option value="gemini-2.0-pro">gemini-2.0-pro</option></select></div>
+      </div>
+    </div>
+    <div class="pblock hide" id="bl-openrouter">
+      <div class="pheader" onclick="tpf('openrouter')"><span class="pname">🔑 OpenRouter</span><span style="color:var(--muted);font-size:.76rem">▼</span></div>
+      <div class="pfields" id="pf-openrouter">
+        <div class="field" style="margin-top:10px"><label>API Key<span class="req">*</span><span class="hint">openrouter.ai/keys</span></label><input type="password" id="orKey" placeholder="sk-or-..."></div>
+        <div class="field"><label>Default Model</label><input type="text" id="orModel" value="anthropic/claude-haiku-4-5"></div>
+      </div>
+    </div>
+    <div class="pblock hide" id="bl-ollama">
+      <div class="pheader" onclick="tpf('ollama')"><span class="pname">🏠 Ollama (local)</span><span style="color:var(--muted);font-size:.76rem">▼</span></div>
+      <div class="pfields" id="pf-ollama">
+        <div class="field" style="margin-top:10px"><label>Base URL</label><input type="text" id="olUrl" value="http://localhost:11434"></div>
+        <div class="field"><label>Default Model</label><input type="text" id="olModel" value="llama3.2"></div>
+      </div>
+    </div>
+  </div>
+  <div class="nav"><button class="btn btn-g" onclick="go(0)">← Back</button><button class="btn btn-p" onclick="go(2)">Next: Channels →</button></div>
+</div>
 
-      <p class="small">
-        Questions? Reach out to
-        <a href="mailto:admin@clawctrl.ai">admin@clawctrl.ai</a>
-      </p>
+<!-- ═══ STEP 2: Channels ═══ -->
+<div class="panel" id="step-2">
+  <div class="sbadge">Step 3 of 6 — Channels</div>
+  <div class="card">
+    <div class="card-title">💬 Channels</div>
+    <div class="card-desc">Which messaging platforms should your AI agent listen on?</div>
+    <div class="srow"><div class="slabel">Telegram<small>Bot via @BotFather</small></div><label class="sw"><input type="checkbox" id="ch-tg" onchange="tch('tg',this.checked)" checked><span class="sl"></span></label></div>
+    <div class="cblock" id="cb-tg"><div class="cbtitle">Telegram</div>
+      <div class="field"><label>Bot Token<span class="req">*</span><span class="hint">from @BotFather on Telegram</span></label><input type="password" id="tgTok" placeholder="123456789:AABBCCaabbcc..."></div>
+      <div class="field"><label>Allowed Chat IDs<span class="hint">(comma-separated; blank = anyone can message)</span></label><input type="text" id="tgIds" placeholder="e.g. 123456789"></div>
+    </div>
+    <div class="srow"><div class="slabel">Discord<small>Discord bot token</small></div><label class="sw"><input type="checkbox" id="ch-dc" onchange="tch('dc',this.checked)"><span class="sl"></span></label></div>
+    <div class="cblock hide" id="cb-dc"><div class="cbtitle">Discord</div>
+      <div class="field"><label>Bot Token<span class="req">*</span><span class="hint">discord.com/developers</span></label><input type="password" id="dcTok" placeholder="MTA..."></div>
+      <div class="field"><label>Application ID</label><input type="text" id="dcApp" placeholder="1234567890123456789"></div>
+    </div>
+    <div class="srow"><div class="slabel">Slack<small>xoxb- bot token</small></div><label class="sw"><input type="checkbox" id="ch-sl" onchange="tch('sl',this.checked)"><span class="sl"></span></label></div>
+    <div class="cblock hide" id="cb-sl"><div class="cbtitle">Slack</div>
+      <div class="field"><label>Bot Token<span class="req">*</span><span class="hint">xoxb-</span></label><input type="password" id="slTok" placeholder="xoxb-..."></div>
+      <div class="field"><label>App Token<span class="hint">xapp- for Socket Mode</span></label><input type="password" id="slApp" placeholder="xapp-..."></div>
+    </div>
+    <div class="srow"><div class="slabel">WebChat<small>Built-in browser chat UI</small></div><label class="sw"><input type="checkbox" id="ch-wc" onchange="tch('wc',this.checked)" checked><span class="sl"></span></label></div>
+    <div class="cblock" id="cb-wc"><div class="cbtitle">WebChat</div>
+      <div class="field"><label>Chat Title</label><input type="text" id="wcTitle" value="Clawctrl"></div>
+    </div>
+  </div>
+  <div class="nav"><button class="btn btn-g" onclick="go(1)">← Back</button><button class="btn btn-p" onclick="go(3)">Next: Agent →</button></div>
+</div>
 
-      <footer class="footer">
-        <span id="year"></span> © ClawCtrl. All rights reserved.
-      </footer>
-    </section>
-  </main>
+<!-- ═══ STEP 3: Agent ═══ -->
+<div class="panel" id="step-3">
+  <div class="sbadge">Step 4 of 6 — Agent & Memory</div>
+  <div class="card">
+    <div class="card-title">🧠 Agent & Memory</div>
+    <div class="card-desc">Configure your agent's identity, concurrency limits, and memory behavior.</div>
+    <div class="tip tip-yellow"><strong>💰 Cost tip</strong> Use haiku/flash as your default — they handle 90% of tasks at a fraction of the cost. Pin expensive models to specific agents only.</div>
+    <div class="frow">
+      <div class="field"><label>Agent Name</label><input type="text" id="agName" value="Molty" placeholder="Molty, Atlas, Nova..."></div>
+      <div class="field"><label>Workspace Path</label><input type="text" id="agWs" value="~/.openclaw/workspace"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Max Concurrent Tasks</label><input type="number" id="maxC" value="4" min="1" max="20"></div>
+      <div class="field"><label>Max Sub-agents</label><input type="number" id="maxS" value="8" min="1" max="40"></div>
+    </div>
+    <div class="frow">
+      <div class="field"><label>Context Soft Limit<span class="hint">(tokens)</span></label><input type="number" id="softT" value="40000" step="5000"></div>
+      <div class="field"><label>Context Hard Limit<span class="hint">(tokens)</span></label><input type="number" id="hardT" value="100000" step="5000"></div>
+    </div>
+    <div class="srow"><div class="slabel">Redact secrets in logs<small>Hides API keys from tool output logs</small></div><label class="sw"><input type="checkbox" id="redact" checked><span class="sl"></span></label></div>
+    <div class="srow"><div class="slabel">Auto memory flush<small>Distill session into memory files when context grows large</small></div><label class="sw"><input type="checkbox" id="flush" checked><span class="sl"></span></label></div>
+    <div class="srow"><div class="slabel">Auto-updater<small>Install OpenClaw updates automatically</small></div><label class="sw"><input type="checkbox" id="autoup"><span class="sl"></span></label></div>
+  </div>
+  <div class="nav"><button class="btn btn-g" onclick="go(2)">← Back</button><button class="btn btn-p" onclick="go(4)">Next: Clawctrl →</button></div>
+</div>
 
-  <script src="script.js"></script>
+<!-- ═══ STEP 4: Clawctrl ═══ -->
+<div class="panel" id="step-4">
+  <div class="sbadge">Step 5 of 6 — Clawctrl</div>
+  <div class="card">
+    <div class="card-title">🎛️ Clawctrl Dashboard</div>
+    <div class="card-desc">Clawctrl is a Next.js dashboard for managing agents and tasks, connected to your OpenClaw gateway via WebSocket. <a href="https://github.com/crshdn/mission-control" target="_blank">View source on GitHub →</a></div>
+    <div class="tip tip-purple"><strong>🔗 Auto-synced from Step 1</strong> Gateway URL and token are pre-filled from your gateway config. Only override if Clawctrl runs on a different machine.</div>
+    <div class="srow" style="margin-bottom:14px">
+      <div class="slabel">Include Clawctrl<small>Generate .env.local and clawctrl setup commands</small></div>
+      <label class="sw"><input type="checkbox" id="includeMC" checked onchange="toggleMCFields()"><span class="sl"></span></label>
+    </div>
+    <div id="mcFields">
+      <div class="frow">
+        <div class="field"><label>Clawctrl Port<span class="hint">(default 4000)</span></label><input type="number" id="mcPort" value="4000" min="1024" max="65535"></div>
+        <div class="field"><label>Projects Path<span class="hint">(agent deliverables)</span></label><input type="text" id="mcProj" value="./projects"></div>
+      </div>
+      <div class="field"><label>Gateway URL<span class="synced">auto-synced</span></label><input type="text" id="mcUrl" placeholder="ws://127.0.0.1:18789"></div>
+      <div class="field"><label>Gateway Token<span class="synced">auto-synced</span></label><input type="password" id="mcTok" placeholder="(from Step 1)"></div>
+      <div class="field"><label>Webhook Secret<span class="hint">(blank = auto-generate)</span></label><input type="text" id="mcWh" placeholder="Leave blank to auto-generate"></div>
+    </div>
+  </div>
+  <div class="nav"><button class="btn btn-g" onclick="go(3)">← Back</button><button class="btn btn-p" onclick="go(5)">Next: Download →</button></div>
+</div>
+
+<!-- ═══ STEP 5: Download ═══ -->
+<div class="panel" id="step-5">
+  <div class="sbadge">Step 6 of 6 — Download & Run</div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div class="card-title">🗺️ Your stack</div>
+    <div class="card-desc" style="margin-bottom:12px">Everything below will be running on your machine after setup.</div>
+    <div style="background:#06080b;border:1px solid var(--border);border-radius:7px;padding:16px;font-family:'Menlo','Courier New',monospace;font-size:.71rem;color:#adbac7;line-height:1.8;overflow-x:auto;white-space:pre" id="archDiagram"></div>
+  </div>
+
+  <div class="tip tip-green" style="margin-bottom:18px">
+    <strong>🚀 One-command setup</strong>
+    Extract the ZIP, open a terminal inside, run <code style="background:rgba(0,0,0,.3);padding:1px 6px;border-radius:3px;">chmod +x setup.sh &amp;&amp; bash setup.sh</code> — downloads &amp; installs OpenClaw, writes your config, sets up Clawctrl, starts everything.
+  </div>
+
+  <div class="card">
+    <div class="tab-bar">
+      <div class="tab active" onclick="showTab(0)">📜 setup.sh</div>
+      <div class="tab" onclick="showTab(1)">📄 openclaw.json</div>
+      <div class="tab" id="envTab" onclick="showTab(2)">⚙️ .env.local</div>
+    </div>
+    <div class="tabpanel active" id="tp-0">
+      <div class="pre-label">setup.sh — run this once</div>
+      <div class="pre-box" id="prevSh"></div>
+    </div>
+    <div class="tabpanel" id="tp-1">
+      <div class="pre-label">openclaw.json — secrets masked in preview</div>
+      <div class="pre-box" id="prevJson"></div>
+    </div>
+    <div class="tabpanel" id="tp-2">
+      <div class="pre-label">.env.local — secrets masked in preview</div>
+      <div class="pre-box" id="prevEnv"></div>
+    </div>
+  </div>
+
+  <div class="setup-card">
+    <h3>📋 After downloading</h3>
+    <div class="step-item"><div class="step-num">1</div><div class="step-text">Extract <code>clawctrl-setup.zip</code> — all files are inside one folder</div></div>
+    <div class="step-item"><div class="step-num">2</div><div class="step-text">Open terminal in that folder and run: <code>chmod +x setup.sh && bash setup.sh</code></div></div>
+    <div class="step-item"><div class="step-num">3</div><div class="step-text">Script downloads OpenClaw, writes config, sets up Clawctrl, starts both services</div></div>
+    <div class="step-item"><div class="step-num">4</div><div class="step-text">Clawctrl dashboard → <code>http://localhost:<span id="mcPortHint">4000</span></code></div></div>
+    <div class="step-item"><div class="step-num">5</div><div class="step-text">Validate anytime: <code>openclaw doctor</code></div></div>
+  </div>
+
+  <div style="margin-top:24px;text-align:center">
+    <button class="zip-btn" id="zipBtn" onclick="dlZip()">
+      📦 Download clawctrl-setup.zip
+    </button>
+    <div id="zipStatus" style="margin-top:10px;font-size:.8rem;color:var(--muted);display:none;">Generating ZIP…</div>
+    <div style="margin-top:10px;font-size:.76rem;color:var(--muted);">Contains <code style="font-size:.75rem">setup.sh</code> · <code style="font-size:.75rem">openclaw.json</code> · <code style="font-size:.75rem">.env.local</code></div>
+  </div>
+
+  <div class="nav" style="margin-top:18px"><button class="btn btn-g" onclick="go(4)">← Back</button><div></div></div>
+</div>
+
+</div><!-- /app -->
+
+<footer>
+  <div style="margin-bottom:8px">🦞 <strong style="color:var(--text)">Clawctrl</strong> — AI Agent Orchestration Dashboard</div>
+  <div>
+    <a href="https://clawctrl.ai">clawctrl.ai</a>
+    <span class="sep">·</span>
+    <a href="https://github.com/crshdn/mission-control" target="_blank">GitHub</a>
+    <span class="sep">·</span>
+    <a href="https://github.com/openclaw/openclaw" target="_blank">OpenClaw</a>
+    <span class="sep">·</span>
+    <a href="https://docs.openclaw.ai" target="_blank">Docs</a>
+  </div>
+  <div style="margin-top:8px;font-size:.72rem;opacity:.5">Powered by OpenClaw Gateway · MIT License</div>
+</footer>
+
+<script>
+var cur = 0;
+var LABELS = ['Gateway','Providers','Channels','Agent','Clawctrl','Download'];
+var provs = new Set(['anthropic']);
+var _tok = null, _wh = null, _na = null;
+
+(function() {
+  var bar = document.getElementById('prog');
+  for (var i = 0; i < 6; i++) {
+    var d = document.createElement('div');
+    d.className = 'pdot' + (i === 0 ? ' active' : '');
+    d.id = 'pd' + i; d.title = LABELS[i]; d.textContent = i + 1;
+    bar.appendChild(d);
+    if (i < 5) { var l = document.createElement('div'); l.className = 'pline'; l.id = 'pl' + i; bar.appendChild(l); }
+  }
+})();
+
+function go(n) {
+  document.getElementById('step-' + cur).classList.remove('active');
+  document.getElementById('pd' + cur).classList.remove('active');
+  document.getElementById('pd' + cur).classList.add('done');
+  for (var i = 0; i < n; i++) {
+    document.getElementById('pd' + i).classList.add('done');
+    var ln = document.getElementById('pl' + i);
+    if (ln) ln.classList.add('done');
+  }
+  cur = n;
+  document.getElementById('pd' + n).classList.remove('done');
+  document.getElementById('pd' + n).classList.add('active');
+  document.getElementById('step-' + n).classList.add('active');
+  if (n === 4) syncMC();
+  if (n === 5) buildAll();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function tprov(id) {
+  var btn = document.getElementById('pb-' + id), blk = document.getElementById('bl-' + id);
+  if (provs.has(id)) { provs.delete(id); btn.classList.remove('on'); blk.classList.add('hide'); }
+  else { provs.add(id); btn.classList.add('on'); blk.classList.remove('hide'); document.getElementById('pf-' + id).classList.add('open'); }
+}
+function tpf(id) { document.getElementById('pf-' + id).classList.toggle('open'); }
+function tch(id, on) { var b = document.getElementById('cb-' + id); on ? b.classList.remove('hide') : b.classList.add('hide'); }
+function toggleMCFields() {
+  var show = document.getElementById('includeMC').checked;
+  document.getElementById('mcFields').style.display = show ? '' : 'none';
+  document.getElementById('envTab').style.display = show ? '' : 'none';
+}
+function showTab(n) {
+  document.querySelectorAll('.tab').forEach(function(t,i){ t.classList.toggle('active',i===n); });
+  document.querySelectorAll('.tabpanel').forEach(function(p,i){ p.classList.toggle('active',i===n); });
+}
+
+function vl(id) { var el=document.getElementById(id); return el?el.value.trim():''; }
+function ck(id) { var el=document.getElementById(id); return el?el.checked:false; }
+function rnd(n) { var a=new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a).map(function(b){return b.toString(16).padStart(2,'0');}).join(''); }
+function tok() { if(!_tok) _tok=rnd(24); return _tok; }
+function wh()  { if(!_wh)  _wh =rnd(20); return _wh; }
+function na()  { if(!_na)  _na =rnd(32); return _na; }
+
+function syncMC() {
+  var port=parseInt(vl('gwPort'))||18789, host=vl('bindMode')==='any'?'0.0.0.0':'127.0.0.1', t=vl('gwToken')||tok();
+  var uEl=document.getElementById('mcUrl'), tEl=document.getElementById('mcTok');
+  if(!uEl._ed) uEl.value='ws://'+host+':'+port;
+  if(!tEl._ed) tEl.value=t;
+  uEl.addEventListener('input',function(){this._ed=true;},{once:true});
+  tEl.addEventListener('input',function(){this._ed=true;},{once:true});
+}
+
+function buildCfg() {
+  var port=parseInt(vl('gwPort'))||18789, am=vl('authMode'), t=vl('gwToken')||tok();
+  var providers={};
+  if(provs.has('anthropic')&&vl('anKey')) providers['anthropic']  ={apiKey:vl('anKey'), defaultModel:vl('anModel')||'claude-haiku-4-5', api:'anthropic'};
+  if(provs.has('openai')   &&vl('oaKey')) providers['openai']     ={apiKey:vl('oaKey'), defaultModel:vl('oaModel')||'gpt-4o-mini', api:'openai-completions'};
+  if(provs.has('gemini')   &&vl('gmKey')) providers['gemini']     ={apiKey:vl('gmKey'), defaultModel:vl('gmModel')||'gemini-2.0-flash', api:'openai-completions', baseUrl:'https://generativelanguage.googleapis.com/v1beta/openai'};
+  if(provs.has('openrouter')&&vl('orKey'))providers['openrouter'] ={apiKey:vl('orKey'), defaultModel:vl('orModel')||'anthropic/claude-haiku-4-5', api:'openai-completions', baseUrl:'https://openrouter.ai/api/v1'};
+  if(provs.has('ollama'))                 providers['ollama']     ={baseUrl:vl('olUrl')||'http://localhost:11434', apiKey:'ollama-local', api:'openai-completions', defaultModel:vl('olModel')||'llama3.2'};
+  var pp=Array.from(provs)[0]||'anthropic';
+  var pm=(providers[pp]&&providers[pp].defaultModel)||'claude-haiku-4-5';
+  var channels={};
+  if(ck('ch-tg')){var ids=vl('tgIds').split(',').map(function(s){return parseInt(s.trim());}).filter(Boolean); channels['telegram']={enabled:true,token:vl('tgTok')}; if(ids.length) channels['telegram'].allowedIds=ids;}
+  if(ck('ch-dc')) channels['discord']={enabled:true,token:vl('dcTok'),applicationId:vl('dcApp')};
+  if(ck('ch-sl')) channels['slack']  ={enabled:true,botToken:vl('slTok'),appToken:vl('slApp')};
+  if(ck('ch-wc')) channels['webchat']={enabled:true,title:vl('wcTitle')||'Clawctrl'};
+  return {
+    meta:{lastTouchedVersion:'clawctrl-wizard',lastTouchedAt:new Date().toISOString()},
+    gateway:{port:port,mode:'local',bind:vl('bindMode')||'loopback', auth:am==='none'?{mode:'none'}:{mode:'token',token:t,allowTailscale:ck('tailscale')}},
+    models:{mode:'merge',providers:providers},
+    agents:{
+      name:vl('agName')||'Molty', workspace:vl('agWs')||'~/.openclaw/workspace',
+      defaults:{model:pp+'/'+pm, maxConcurrent:parseInt(vl('maxC'))||4, subagents:{maxConcurrent:parseInt(vl('maxS'))||8}},
+      contextPruning:{mode:'cache-ttl',softThresholdTokens:parseInt(vl('softT'))||40000,hardLimitTokens:parseInt(vl('hardT'))||100000,keepLastAssistants:3},
+      compaction:ck('flush')?{memoryFlush:{enabled:true,trigger:'soft-threshold',flushPrompt:'Summarize key decisions, context changes, and important facts. Skip routine exchanges. Write NO_FLUSH if nothing important happened.'}}:{memoryFlush:{enabled:false}}
+    },
+    channels:channels,
+    logging:{redactSensitive:ck('redact')?'tools':'off'},
+    update:{auto:{enabled:ck('autoup'),channel:'stable'}}
+  };
+}
+
+function buildEnv() {
+  var gwUrl=vl('mcUrl')||('ws://127.0.0.1:'+(parseInt(vl('gwPort'))||18789));
+  var gwTok=vl('mcTok')||vl('gwToken')||tok();
+  var mcPort=parseInt(vl('mcPort'))||4000;
+  return [
+    '# Clawctrl .env.local — generated by clawctrl.ai setup wizard',
+    '',
+    '# OpenClaw Gateway Connection',
+    'OPENCLAW_GATEWAY_URL='+gwUrl,
+    'OPENCLAW_GATEWAY_TOKEN='+gwTok,
+    '',
+    '# Server',
+    'PORT='+mcPort,
+    '',
+    '# Storage',
+    'PROJECTS_PATH='+(vl('mcProj')||'./projects'),
+    '',
+    '# Security',
+    'WEBHOOK_SECRET='+(vl('mcWh')||wh()),
+    'NEXTAUTH_SECRET='+na(),
+    'NEXTAUTH_URL=http://localhost:'+mcPort
+  ].join('\n');
+}
+
+function buildSh() {
+  var cfg=buildCfg(), gwPort=cfg.gateway.port, mcPort=parseInt(vl('mcPort'))||4000;
+  var mcOn=ck('includeMC'), wsRaw=vl('agWs')||'~/.openclaw/workspace';
+  var jsonB64=btoa(unescape(encodeURIComponent(JSON.stringify(cfg,null,2))));
+  var envB64=mcOn?btoa(unescape(encodeURIComponent(buildEnv()))):'';
+  var L=[];
+  L.push('#!/usr/bin/env bash');
+  L.push('# ================================================================');
+  L.push('#  Clawctrl + OpenClaw — One-Shot Setup Script');
+  L.push('#  Generated by clawctrl.ai');
+  L.push('#  OpenClaw:   https://github.com/openclaw/openclaw');
+  L.push('#  Clawctrl:   https://github.com/crshdn/mission-control');
+  L.push('# ================================================================');
+  L.push('set -euo pipefail');
+  L.push('');
+  L.push('BOLD="\\033[1m"; GRN="\\033[32m"; BLU="\\033[34m"; YLW="\\033[33m"; RED="\\033[31m"; RST="\\033[0m"');
+  L.push('log()  { echo -e "${BOLD}${GRN}[clawctrl]${RST} $*"; }');
+  L.push('info() { echo -e "${BOLD}${BLU}[info]${RST} $*"; }');
+  L.push('warn() { echo -e "${BOLD}${YLW}[warn]${RST} $*"; }');
+  L.push('die()  { echo -e "${BOLD}${RED}[error]${RST} $*" >&2; exit 1; }');
+  L.push('');
+  L.push('echo ""');
+  L.push('echo -e "${BOLD}🦞  Clawctrl Setup${RST}"');
+  L.push('echo "────────────────────────────────"');
+  L.push('echo ""');
+  L.push('');
+  L.push('# ── 1. OS check ─────────────────────────────────────────────────');
+  L.push('case "$(uname -s)" in');
+  L.push('  Linux*|Darwin*) : ;;');
+  L.push('  *) die "Unsupported OS. Use Linux, macOS, or WSL2 on Windows." ;;');
+  L.push('esac');
+  L.push('');
+  L.push('# ── 2. Node 22+ ─────────────────────────────────────────────────');
+  L.push('NEED_NODE=0');
+  L.push('if command -v node &>/dev/null; then');
+  L.push('  NVER=$(node -e "process.stdout.write(String(process.versions.node.split(\'.\')[0]))")');
+  L.push('  if [ "$NVER" -ge 22 ]; then log "Node $(node -v) ✓";');
+  L.push('  else warn "Node $NVER found — need 22+. Installer will upgrade."; NEED_NODE=1; fi');
+  L.push('else warn "Node not found — installer will install it."; NEED_NODE=1; fi');
+  L.push('');
+  L.push('# ── 3. Install OpenClaw (gateway runtime + CLI) ─────────────────');
+  L.push('if command -v openclaw &>/dev/null && [ "$NEED_NODE" -eq 0 ]; then');
+  L.push('  log "OpenClaw already installed ✓"');
+  L.push('else');
+  L.push('  log "Downloading OpenClaw from https://openclaw.ai/install.sh ..."');
+  L.push('  curl -fsSL https://openclaw.ai/install.sh | bash -s -- --no-onboard');
+  L.push('  NPM_BIN="$(npm prefix -g 2>/dev/null)/bin"');
+  L.push('  export PATH="$NPM_BIN:$PATH"');
+  L.push('  log "OpenClaw downloaded and installed ✓"');
+  L.push('fi');
+  L.push('command -v openclaw &>/dev/null || die "openclaw not found after install. Open a new terminal and re-run."');
+  L.push('log "OpenClaw $(openclaw --version 2>/dev/null || echo ready) — gateway on port '+gwPort+'"');
+  L.push('');
+  L.push('# ── 4. Write openclaw.json ──────────────────────────────────────');
+  L.push('OCLAW_DIR="$HOME/.openclaw"');
+  L.push('mkdir -p "$OCLAW_DIR"');
+  L.push('CONFIG="$OCLAW_DIR/openclaw.json"');
+  L.push('[ -f "$CONFIG" ] && cp "$CONFIG" "$CONFIG.bak.$(date +%s)" && warn "Backed up existing config"');
+  L.push('OPENCLAW_JSON_B64="'+jsonB64+'"');
+  L.push('echo "$OPENCLAW_JSON_B64" | base64 --decode > "$CONFIG" 2>/dev/null || \\');
+  L.push('  echo "$OPENCLAW_JSON_B64" | base64 -d > "$CONFIG"');
+  L.push('chmod 600 "$CONFIG"');
+  L.push('log "Config written ✓"');
+  L.push('');
+  L.push('# ── 5. Workspace ────────────────────────────────────────────────');
+  L.push('WS="'+wsRaw.replace(/^~/,'$HOME')+'"');
+  L.push('mkdir -p "$WS"');
+  L.push('log "Workspace: $WS ✓"');
+  L.push('');
+  L.push('# ── 6. Validate ─────────────────────────────────────────────────');
+  L.push('log "Running openclaw doctor..."');
+  L.push('openclaw doctor --fix || warn "Doctor found issues — review above."');
+  L.push('');
+  if(mcOn){
+    L.push('# ── 7. Clawctrl ─────────────────────────────────────────────────');
+    L.push('CC_DIR="$HOME/clawctrl"');
+    L.push('if [ -d "$CC_DIR/.git" ]; then');
+    L.push('  log "Clawctrl found — pulling latest..."');
+    L.push('  git -C "$CC_DIR" pull --ff-only || warn "Pull failed, using existing."');
+    L.push('else');
+    L.push('  log "Cloning Clawctrl..."');
+    L.push('  git clone https://github.com/crshdn/mission-control.git "$CC_DIR"');
+    L.push('fi');
+    L.push('log "Installing dependencies..."');
+    L.push('npm --prefix "$CC_DIR" install --silent');
+    L.push('MC_ENV_B64="'+envB64+'"');
+    L.push('echo "$MC_ENV_B64" | base64 --decode > "$CC_DIR/.env.local" 2>/dev/null || \\');
+    L.push('  echo "$MC_ENV_B64" | base64 -d > "$CC_DIR/.env.local"');
+    L.push('chmod 600 "$CC_DIR/.env.local"');
+    L.push('log ".env.local written ✓"');
+    L.push('log "Seeding database..."');
+    L.push('npm --prefix "$CC_DIR" run db:seed 2>/dev/null || warn "db:seed skipped."');
+    L.push('');
+  }
+  L.push('# ── Start ───────────────────────────────────────────────────────');
+  L.push('echo ""');
+  L.push('echo -e "${BOLD}${GRN}═══════════════════════════════════${RST}"');
+  L.push('echo -e "${BOLD}${GRN}  ✅  Clawctrl setup complete!${RST}"');
+  L.push('echo -e "${BOLD}${GRN}═══════════════════════════════════${RST}"');
+  L.push('echo ""');
+  if(mcOn) L.push('info "Clawctrl  → http://localhost:'+mcPort+'"');
+  L.push('info "Gateway   → ws://127.0.0.1:'+gwPort+'"');
+  L.push('info "Agent     → '+(vl('agName')||'Molty')+'"');
+  L.push('echo ""');
+  L.push('info "Press Ctrl+C to stop."');
+  L.push('echo ""');
+  if(mcOn){
+    L.push('npm --prefix "$HOME/clawctrl" run dev &');
+    L.push('CC_PID=$!');
+    L.push('info "Clawctrl started (PID $CC_PID)"');
+    L.push('sleep 2');
+    L.push('');
+  }
+  L.push('openclaw gateway start');
+  L.push('');
+  return L.join('\n');
+}
+
+function maskCfg(cfg) {
+  var o=JSON.parse(JSON.stringify(cfg));
+  function w(x){if(!x||typeof x!=='object')return;['apiKey','token','botToken','appToken'].forEach(function(k){if(x[k]&&typeof x[k]==='string'&&x[k].length>4)x[k]=x[k].slice(0,4)+'••••••••';});Object.values(x).forEach(w);}
+  w(o); return JSON.stringify(o,null,2);
+}
+function maskEnv(s){return s.replace(/^(.*?=)(.{4})(.+)$/mg,function(_,pre,keep){return pre+keep+'••••••••';});}
+
+function buildAll() {
+  var cfg=buildCfg(), mcPort=parseInt(vl('mcPort'))||4000, gwPort=cfg.gateway.port, mcOn=ck('includeMC');
+  var provider=Array.from(provs)[0]||'anthropic';
+  var provName={anthropic:'Anthropic (Claude)',openai:'OpenAI (GPT)',gemini:'Google Gemini',openrouter:'OpenRouter',ollama:'Ollama (local)'}[provider]||provider;
+  document.getElementById('prevJson').textContent=maskCfg(cfg);
+  document.getElementById('prevEnv').textContent=maskEnv(buildEnv());
+  document.getElementById('prevSh').textContent=buildSh();
+  document.getElementById('mcPortHint').textContent=mcPort;
+  document.getElementById('envTab').style.display=mcOn?'':'none';
+
+  var mcBlock=mcOn
+    ?'  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510          \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n'
+    +'  \u2502 Clawctrl         \u2502\u25c4\u2500\u2500 WS \u2500\u2500\u25ba\u2502   OpenClaw Gateway    \u2502\n'
+    +'  \u2502   (Next.js)      \u2502          \u2502  (AI Agent Runtime)   \u2502\n'
+    +'  \u2502   Port '+mcPort+'      \u2502          \u2502  Port '+gwPort+'              \u2502\n'
+    +'  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518          \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n'
+    +'           \u2502                                \u2502\n'
+    +'           \u25bc                                \u25bc\n'
+    +'  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510          \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n'
+    +'  \u2502     SQLite       \u2502          \u2502  '+provName.padEnd(20)+'\u2502\n'
+    +'  \u2502    Database      \u2502          \u2502  (AI Provider)       \u2502\n'
+    +'  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518          \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518'
+    :'  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n'
+    +'  \u2502    OpenClaw Gateway        \u2502\n'
+    +'  \u2502    (AI Agent Runtime)      \u2502\n'
+    +'  \u2502    Port '+gwPort+'                  \u2502\n'
+    +'  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n'
+    +'               \u2502\n               \u25bc\n'
+    +'  \u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n'
+    +'  \u2502  '+provName.padEnd(24)+'\u2502\n'
+    +'  \u2502  (AI Provider)           \u2502\n'
+    +'  \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518';
+
+  document.getElementById('archDiagram').textContent=
+    '\u250c'+'\u2500'.repeat(62)+'\u2510\n'
+    +'\u2502'+'                    YOUR MACHINE                             \u2502\n'
+    +'\u2502\n'+mcBlock+'\n\u2502\n'
+    +'\u2514'+'\u2500'.repeat(62)+'\u2518';
+}
+
+function dlZip() {
+  var btn=document.getElementById('zipBtn'), status=document.getElementById('zipStatus');
+  btn.disabled=true; btn.textContent='⏳ Generating…'; status.style.display='block';
+  setTimeout(function(){
+    try {
+      var zip=new JSZip(), folder=zip.folder('clawctrl-setup');
+      folder.file('setup.sh', buildSh());
+      folder.file('openclaw.json', JSON.stringify(buildCfg(),null,2));
+      if(ck('includeMC')) folder.file('.env.local', buildEnv());
+      zip.generateAsync({type:'blob',compression:'DEFLATE'})
+        .then(function(blob){
+          var a=document.createElement('a');
+          a.href=URL.createObjectURL(blob); a.download='clawctrl-setup.zip';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function(){URL.revokeObjectURL(a.href);},5000);
+          btn.disabled=false; btn.textContent='📦 Download clawctrl-setup.zip'; status.style.display='none';
+        })
+        .catch(function(err){ btn.disabled=false; btn.textContent='📦 Download clawctrl-setup.zip'; status.textContent='Error: '+err.message; });
+    } catch(err){ btn.disabled=false; btn.textContent='📦 Download clawctrl-setup.zip'; status.textContent='Error: '+err.message; }
+  },50);
+}
+</script>
 </body>
 </html>
